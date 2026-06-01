@@ -207,6 +207,8 @@ productSelect.addEventListener("change", () => {
   state.product = productSelect.value;
   state.productName = productSelect.options[productSelect.selectedIndex].text;
   productPageTitle.textContent = `Custom ${state.productName}`;
+  const cibModel = document.getElementById("cibModelName");
+  if (cibModel) cibModel.textContent = state.productName;
 });
 
 document.getElementById("addSizeBtn").addEventListener("click", () => {
@@ -245,6 +247,75 @@ document.querySelectorAll("[data-text-type]").forEach(card => {
     openScreen("textEditorPage");
   });
 });
+
+// Text editor — colour swatches
+document.querySelectorAll(".te-dot[data-colour]").forEach(dot => {
+  dot.addEventListener("click", () => {
+    document.querySelectorAll(".te-dot").forEach(d => d.classList.remove("selected"));
+    dot.classList.add("selected");
+    document.getElementById("textColourInput").value = dot.dataset.colour;
+  });
+});
+
+// Custom colour picker sync
+const textColourInput = document.getElementById("textColourInput");
+if (textColourInput) {
+  textColourInput.addEventListener("input", () => {
+    document.querySelectorAll(".te-dot").forEach(d => d.classList.remove("selected"));
+  });
+}
+
+// Char counter + font-family preview on textarea
+const customTextInput = document.getElementById("customTextInput");
+const teCharCount = document.getElementById("teCharCount");
+if (customTextInput && teCharCount) {
+  customTextInput.addEventListener("input", () => {
+    teCharCount.textContent = customTextInput.value.length;
+  });
+}
+
+// Custom font picker
+(function () {
+  const trigger  = document.getElementById("teFontTrigger");
+  const dropdown = document.getElementById("teFontDropdown");
+  const selected = document.getElementById("teFontSelected");
+  const nativeSelect = document.getElementById("fontSelect");
+  const textarea = document.getElementById("customTextInput");
+  if (!trigger || !dropdown) return;
+
+  trigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle("open");
+  });
+
+  dropdown.querySelectorAll(".te-font-option").forEach(opt => {
+    opt.addEventListener("click", () => {
+      const font = opt.dataset.font;
+      // update shown label
+      selected.textContent = font;
+      selected.style.fontFamily = font;
+      // update native select (for applyTextBtn)
+      nativeSelect.value = font;
+      // preview on textarea
+      if (textarea) textarea.style.fontFamily = font;
+      // mark active
+      dropdown.querySelectorAll(".te-font-option").forEach(o => o.classList.remove("active-font"));
+      opt.classList.add("active-font");
+      dropdown.classList.remove("open");
+    });
+  });
+
+  // close when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!trigger.closest(".te-font-picker").contains(e.target)) {
+      dropdown.classList.remove("open");
+    }
+  });
+
+  // mark Arial as default active
+  const defaultOpt = dropdown.querySelector('[data-font="Arial"]');
+  if (defaultOpt) defaultOpt.classList.add("active-font");
+})();
 
 document.getElementById("applyTextBtn").addEventListener("click", () => {
   state.text = document.getElementById("customTextInput").value.trim() || "TEXT";
@@ -1069,7 +1140,89 @@ document.querySelectorAll(".location-item").forEach(item => {
 
 document.getElementById("colourShortcut").addEventListener("click", () => openScreen("productPage"));
 document.getElementById("closeCustomiserBtn").addEventListener("click", () => alert("Customiser closed."));
-document.getElementById("previewBtn").addEventListener("click", () => alert("Preview mode can be connected later."));
+document.getElementById("previewBtn").addEventListener("click", () => {
+  const origPreview = document.getElementById("productPreview");
+  const slot = document.getElementById("previewPoloSlot");
+  if (!origPreview || !slot) return;
+
+  const poloClone = origPreview.querySelector(".polo-colour-wrap")?.cloneNode(true);
+  const customAreaClone = origPreview.querySelector(".custom-area")?.cloneNode(true);
+  if (!poloClone || !customAreaClone) return;
+
+  // Build a clean preview scene: polo + print area with logo only
+  const scene = document.createElement("div");
+  scene.className = "product-preview " + origPreview.className.replace("product-preview", "").trim();
+  scene.style.transform = "none";
+
+  const textLayerClone = customAreaClone.querySelector(".text-layer");
+  if (textLayerClone) textLayerClone.remove();
+
+  customAreaClone.querySelectorAll(
+    "button, .resize-dot, .rotate-handle, .text-dot-br, .text-rotate-handle, .logo-size-label, .text-size-label"
+  ).forEach((el) => el.remove());
+
+  const cloneCL = poloClone.querySelector(".colour-layer");
+  if (cloneCL && colourLayer) {
+    cloneCL.style.backgroundColor = colourLayer.style.backgroundColor || "#ffffff";
+  }
+
+  const clonedProductImage = poloClone.querySelector(".product-image");
+  if (clonedProductImage && productShape) {
+    clonedProductImage.src = productShape.currentSrc || productShape.src;
+  }
+
+  const clonedLogo = customAreaClone.querySelector("#uploadedLogo");
+  if (clonedLogo && uploadedLogo) {
+    clonedLogo.src = uploadedLogo.currentSrc || uploadedLogo.src;
+    if (!clonedLogo.src) clonedLogo.remove();
+  }
+
+  scene.appendChild(poloClone);
+  scene.appendChild(customAreaClone);
+
+  // Avoid duplicate IDs in modal clone
+  scene.querySelectorAll("[id]").forEach((node) => node.removeAttribute("id"));
+
+  const origW = origPreview.offsetWidth || 270;
+  const origH = Math.max(origPreview.offsetHeight || 320, origW);
+  const maxW = Math.min(window.innerWidth * 0.9, 470);
+  const maxH = window.innerHeight * 0.68;
+  const fitScale = Math.min(maxW / origW, maxH / origH);
+  const scale = Math.max(fitScale, 1);
+  const previewOffsetX = Math.round(origW * 0.045);
+
+  const wrapper = document.createElement("div");
+  wrapper.style.cssText = `
+    width:${origW * scale}px;
+    height:${origH * scale}px;
+    position:relative;
+    overflow:hidden;
+    border-radius:12px;
+  `;
+
+  scene.style.cssText = `
+    position:absolute;
+    top:0; left:-${previewOffsetX}px;
+    width:${origW}px;
+    height:${origH}px;
+    transform:scale(${scale});
+    transform-origin:top left;
+  `;
+
+  wrapper.appendChild(scene);
+  slot.innerHTML = "";
+  slot.appendChild(wrapper);
+
+  document.getElementById("previewModal").classList.add("open");
+});
+
+document.getElementById("previewCloseBtn").addEventListener("click", () => {
+  document.getElementById("previewModal").classList.remove("open");
+});
+
+document.getElementById("previewModal").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove("open");
+});
 document.getElementById("basketBtn").addEventListener("click", () => document.getElementById("buyBtn").click());
 
 document.getElementById("priceBtn").addEventListener("click", () => {
@@ -1158,8 +1311,8 @@ function renderMiniColours() {
     });
   }
 
-  // First 4 swatches in the row
-  colours.slice(0, 4).forEach(([name, hex]) => {
+  // All colours visible in the row (2 rows with wrap)
+  colours.forEach(([name, hex]) => {
     const btn = document.createElement("button");
     btn.className = "mini-swatch" + (name === state.colourName ? " selected" : "");
     btn.style.background = hex;
@@ -1203,11 +1356,14 @@ document.addEventListener("click", (e) => {
 renderMiniColours();
 
 // View tabs (Front / Back / Left / Right)
+const viewNameLabel = document.getElementById("viewNameLabel");
+
 document.querySelectorAll(".view-tab").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".view-tab").forEach(b => b.classList.remove("active-view"));
     btn.classList.add("active-view");
     state.selectedArea = btn.dataset.area;
+    if (viewNameLabel) viewNameLabel.textContent = btn.dataset.area.toUpperCase();
     applyArea();
   });
 });
@@ -1233,6 +1389,22 @@ document.getElementById("qtyPlusBtn").addEventListener("click", () => {
 mainQtyInput.addEventListener("input", () => {
   if (qtyDisplay) qtyDisplay.textContent = mainQtyInput.value;
 });
+
+// Tool buttons — Select / Pan
+(function () {
+  const selectBtn = document.getElementById("selectToolBtn");
+  const panBtn    = document.getElementById("panToolBtn");
+  if (!selectBtn || !panBtn) return;
+
+  function activateTool(activeBtn, inactiveBtn) {
+    activeBtn.classList.add("active-tool");
+    inactiveBtn.classList.remove("active-tool");
+    state.activeTool = activeBtn.id === "selectToolBtn" ? "select" : "pan";
+  }
+
+  selectBtn.addEventListener("click", () => activateTool(selectBtn, panBtn));
+  panBtn.addEventListener("click",    () => activateTool(panBtn, selectBtn));
+})();
 
 // Zoom buttons
 let currentZoom = 1;

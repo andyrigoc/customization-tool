@@ -77,16 +77,41 @@
       <input id="mainQtyInput" type="number" min="1" value="1">
     </div>
 
+    <!-- Product header (above canvas) -->
+    <div class="product-header">
+      <h2 class="ph-title" id="cibModelName">Polo Shirt</h2>
+      <p class="ph-sub">
+        <span class="ph-code" id="cibCode">SKU-2024</span>
+        <span class="ph-divider"> | </span>
+        <span class="ph-brand">GILDAN</span>
+      </p>
+    </div>
+
     <!-- Canvas area -->
     <div class="canvas-wrap">
-      <div class="left-tools">
-        <button class="tool-dot active-tool" id="selectToolBtn" title="Select">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5.5 3.21V20.8c0 .45.54.67.85.35l4.86-4.86a.5.5 0 0 1 .35-.15h6.87a.5.5 0 0 0 .35-.85L6.35 2.85a.5.5 0 0 0-.85.36z"/></svg>
+
+      <!-- view name hidden, kept for JS -->
+      <span id="viewNameLabel" style="display:none"></span>
+
+      <div class="view-tabs-side">
+        <button class="view-tab active-view" data-area="front">
+          <img class="view-thumb" src="https://i.postimg.cc/J4H7k7N0/vecteezy-white-polo-mockup-47872842.png" alt="Front">
+          <span class="view-thumb-label">Front</span>
         </button>
-        <button class="tool-dot" id="panToolBtn" title="Pan">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+        <button class="view-tab" data-area="back">
+          <img class="view-thumb" src="https://i.postimg.cc/J4H7k7N0/vecteezy-white-polo-mockup-47872842.png" alt="Back">
+          <span class="view-thumb-label">Back</span>
+        </button>
+        <button class="view-tab" data-area="left">
+          <img class="view-thumb" src="https://i.postimg.cc/J4H7k7N0/vecteezy-white-polo-mockup-47872842.png" alt="Left">
+          <span class="view-thumb-label">Left</span>
+        </button>
+        <button class="view-tab" data-area="right">
+          <img class="view-thumb" src="https://i.postimg.cc/J4H7k7N0/vecteezy-white-polo-mockup-47872842.png" alt="Right">
+          <span class="view-thumb-label">Right</span>
         </button>
       </div>
+
 
       <div id="productPreview" class="product-preview area-front">
         <div class="polo-colour-wrap">
@@ -123,6 +148,15 @@
       </div>
 
       <div class="right-panel">
+        <button class="right-action-btn active-tool" id="selectToolBtn" title="Select">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M5.5 3.21V20.8c0 .45.54.67.85.35l4.86-4.86a.5.5 0 0 1 .35-.15h6.87a.5.5 0 0 0 .35-.85L6.35 2.85a.5.5 0 0 0-.85.36z"/></svg>
+          <span>Select</span>
+        </button>
+        <button class="right-action-btn" id="panToolBtn" title="Pan">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+          <span>Pan</span>
+        </button>
+        <div class="right-divider"></div>
         <button class="right-action-btn" id="previewBtn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
           <span>Preview</span>
@@ -170,31 +204,6 @@
         </div>
       </div>
 
-      <div class="sheet-row">
-        <div class="sheet-label">View</div>
-        <div class="view-tabs">
-          <button class="view-tab active-view" data-area="front">Front</button>
-          <button class="view-tab" data-area="back">Back</button>
-          <button class="view-tab" data-area="left">Left</button>
-          <button class="view-tab" data-area="right">Right</button>
-        </div>
-      </div>
-
-      <div class="sheet-row">
-        <div class="sheet-label">Size</div>
-        <div class="sheet-select-wrap">
-          <select class="sheet-select" id="mainSizeSelect">
-            <option>XS</option>
-            <option>S</option>
-            <option selected>M</option>
-            <option>L</option>
-            <option>XL</option>
-            <option>XXL</option>
-            <option>3XL</option>
-          </select>
-          <svg class="select-chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-        </div>
-      </div>
 
       <div class="sheet-info-row">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
@@ -288,55 +297,142 @@
   </section>
 
   <section id="textTypePage" class="screen">
-    <div class="black-header">Select Type Of Text</div>
-
-    <div class="page-body">
-      <div class="option-card" data-text-type="embroidery">
-        <div class="option-icon">T</div>
-        <div>
-          <div class="option-title">Add Embroidery Text</div>
-          <div class="option-desc">Best for polos, caps, beanies and left chest uniforms.</div>
-        </div>
-      </div>
-
-      <div class="option-card" data-text-type="dtf">
-        <div class="option-icon">T</div>
-        <div>
-          <div class="option-title">Add DTF Printing Text</div>
-          <div class="option-desc">Best for full colour prints, small runs and detailed text.</div>
-        </div>
+    <div class="sub-header">
+      <button class="sub-back-btn" data-open="mainEditor">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      <span class="sub-header-title">Select type of text</span>
+      <div class="sub-header-cart">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        <span class="sub-cart-badge">2</span>
       </div>
     </div>
 
-    <div class="fixed-action-bar">
-      <button class="btn-black" data-open="mainEditor">OK</button>
-      <button class="btn-grey" data-open="mainEditor">Cancel</button>
+    <div class="print-type-list">
+      <div class="print-type-card" data-text-type="embroidery" data-open="textEditorPage">
+        <img class="print-type-img" src="img/embroidery.jpg" alt="Embroidery">
+        <div class="print-type-body">
+          <div class="print-type-title">Add Embroidery Text</div>
+          <div class="print-type-desc">Best for polos, caps, beanies and left chest uniforms.</div>
+        </div>
+        <svg class="print-type-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </div>
+
+      <div class="print-type-card" data-text-type="dtf" data-open="textEditorPage">
+        <img class="print-type-img" src="img/dtf.jpg" alt="DTF Printing">
+        <div class="print-type-body">
+          <div class="print-type-title">Add DTF Printing Text</div>
+          <div class="print-type-desc">Best for full colour prints, small runs and detailed text.</div>
+        </div>
+        <svg class="print-type-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </div>
+
+      <div class="print-type-card" data-text-type="screen" data-open="textEditorPage">
+        <img class="print-type-img" src="img/screen-printing.jpg" alt="Screen Printing">
+        <div class="print-type-body">
+          <div class="print-type-title">Add Screen Printing Text</div>
+          <div class="print-type-desc">Best for bold designs, large runs and durable prints.</div>
+        </div>
+        <svg class="print-type-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </div>
+
+      <div class="print-type-card" data-text-type="vinyl" data-open="textEditorPage">
+        <img class="print-type-img" src="img/vinyl.jpg" alt="Vinyl Heat Press">
+        <div class="print-type-body">
+          <div class="print-type-title">Add Vinyl Heat Press Text</div>
+          <div class="print-type-desc">Best for single-colour designs, names and numbers. Durable, vibrant colours with a clean, professional finish.</div>
+        </div>
+        <svg class="print-type-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </div>
+    </div>
+
+    <div class="sub-action-bar">
+      <button class="sub-btn-ok" id="textTypeOkBtn" data-open="textEditorPage">OK</button>
+      <button class="sub-btn-cancel" data-open="mainEditor">Cancel</button>
     </div>
   </section>
 
   <section id="textEditorPage" class="screen">
-    <div class="black-header">Add Text</div>
-
-    <div class="editor-panel">
-      <label>Text</label>
-      <textarea id="customTextInput" class="textarea-field" placeholder="Enter your text"></textarea>
-
-      <label>Text Colour</label>
-      <input id="textColourInput" class="field" type="color" value="#ff2b2b">
-
-      <label>Font</label>
-      <select id="fontSelect" class="select-field">
-        <option value="Arial">Arial</option>
-        <option value="Impact">Impact</option>
-        <option value="Georgia">Georgia</option>
-        <option value="Verdana">Verdana</option>
-        <option value="Times New Roman">Times New Roman</option>
-      </select>
+    <div class="sub-header">
+      <button class="sub-back-btn" data-open="textTypePage">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      <span class="sub-header-title">Add Text</span>
+      <div class="sub-header-cart">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        <span class="sub-cart-badge">2</span>
+      </div>
     </div>
 
-    <div class="fixed-action-bar">
-      <button class="btn-black" id="applyTextBtn">OK</button>
-      <button class="btn-grey" data-open="mainEditor">Cancel</button>
+    <div class="text-editor-wrap">
+      <div class="te-section" style="position:relative;z-index:300;">
+        <div class="te-label">Font</div>
+        <!-- hidden native select for JS compatibility -->
+        <select id="fontSelect" style="display:none;">
+          <option value="Arial">Arial</option>
+          <option value="Impact">Impact</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Trebuchet MS">Trebuchet MS</option>
+        </select>
+        <!-- custom font picker -->
+        <div class="te-font-picker" id="teFontPicker">
+          <div class="te-font-trigger" id="teFontTrigger">
+            <span class="te-font-selected" id="teFontSelected" style="font-family:Arial;">Arial</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="te-font-dropdown" id="teFontDropdown">
+            <div class="te-font-option" data-font="Arial" style="font-family:Arial;">Arial — The quick brown fox</div>
+            <div class="te-font-option" data-font="Impact" style="font-family:Impact;">Impact — The quick brown fox</div>
+            <div class="te-font-option" data-font="Georgia" style="font-family:Georgia;">Georgia — The quick brown fox</div>
+            <div class="te-font-option" data-font="Verdana" style="font-family:Verdana;">Verdana — The quick brown fox</div>
+            <div class="te-font-option" data-font="Times New Roman" style="font-family:'Times New Roman';">Times New Roman — The quick brown fox</div>
+            <div class="te-font-option" data-font="Courier New" style="font-family:'Courier New';">Courier New — The quick brown fox</div>
+            <div class="te-font-option" data-font="Trebuchet MS" style="font-family:'Trebuchet MS';">Trebuchet MS — The quick brown fox</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="te-section">
+        <div class="te-label">Text</div>
+        <div class="te-textarea-wrap">
+          <textarea id="customTextInput" class="te-textarea" placeholder="Enter your text" maxlength="50"></textarea>
+          <span class="te-char-counter"><span id="teCharCount">0</span> / 50</span>
+        </div>
+      </div>
+
+      <div class="te-section">
+        <div class="te-label">Text Colour</div>
+        <div class="te-swatches" id="teSwatches">
+          <button class="te-dot" data-colour="#ffffff" style="background:#ffffff;border-color:#ccc;"></button>
+          <button class="te-dot" data-colour="#000000" style="background:#000000;"></button>
+          <button class="te-dot" data-colour="#444444" style="background:#444444;"></button>
+          <button class="te-dot" data-colour="#888888" style="background:#888888;"></button>
+          <button class="te-dot selected" data-colour="#ff2b2b" style="background:#ff2b2b;"></button>
+          <button class="te-dot" data-colour="#f97316" style="background:#f97316;"></button>
+          <button class="te-dot" data-colour="#facc15" style="background:#facc15;"></button>
+          <button class="te-dot" data-colour="#22c55e" style="background:#22c55e;"></button>
+          <button class="te-dot" data-colour="#3b82f6" style="background:#3b82f6;"></button>
+          <button class="te-dot" data-colour="#1e3a8a" style="background:#1e3a8a;"></button>
+          <button class="te-dot" data-colour="#7c3aed" style="background:#7c3aed;"></button>
+          <button class="te-dot" data-colour="#ec4899" style="background:#ec4899;"></button>
+          <button class="te-dot" data-colour="#be185d" style="background:#be185d;"></button>
+          <button class="te-dot" data-colour="#92400e" style="background:#92400e;"></button>
+          <button class="te-dot" data-colour="#3b1a08" style="background:#3b1a08;"></button>
+          <button class="te-dot" data-colour="#d4b483" style="background:#d4b483;"></button>
+          <label class="te-dot te-dot-custom" title="Custom colour">
+            +
+            <input type="color" id="textColourInput" value="#ff2b2b" style="opacity:0;position:absolute;width:0;height:0;">
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="sub-action-bar">
+      <button class="sub-btn-ok" id="applyTextBtn">OK</button>
+      <button class="sub-btn-cancel" data-open="mainEditor">Cancel</button>
     </div>
   </section>
 
@@ -619,6 +715,17 @@
     </div>
   </section>
 
+</div>
+
+<!-- Preview Modal -->
+<div id="previewModal" class="preview-modal" role="dialog" aria-modal="true">
+  <div class="preview-modal-card">
+    <button class="preview-modal-close" id="previewCloseBtn" aria-label="Close preview">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <p class="preview-modal-label">Preview</p>
+    <div id="previewPoloSlot"></div>
+  </div>
 </div>
 
 <script src="app.js"></script>
