@@ -989,16 +989,17 @@ function updateQualityBar(widthCm) {
     if (maskWidth === 0) maskEl.style.borderRadius = '0';
     else maskEl.style.borderRadius = '0 8px 8px 0';
     pctElLocal.textContent = quality + '%';
-    if (quality < 40) pctElLocal.style.color = '#e53e3e';
-    else if (quality < 60) pctElLocal.style.color = '#ed8936';
-    else if (quality < 75) pctElLocal.style.color = '#ecc94b';
+    if (quality < 35) pctElLocal.style.color = '#e53e3e';
+    else if (quality < 50) pctElLocal.style.color = '#ed8936';
+    else if (quality < 65) pctElLocal.style.color = '#ecc94b';
     else pctElLocal.style.color = '#48bb78';
   }
 
   applyToBar(mask, pctEl);
   applyToBar(mainMask, mainPct);
 
-
+  const warning = document.getElementById('qualityWarning');
+  if (warning) warning.style.display = 'flex';
 }
 
 logoSettingsBtn.addEventListener("click", e => {
@@ -1032,6 +1033,8 @@ function clearLogo() {
   const mainPctReset = document.getElementById('mainQualityPct');
   if (mainMaskReset) { mainMaskReset.style.width = '100%'; mainMaskReset.style.borderRadius = '0 6px 6px 0'; }
   if (mainPctReset) { mainPctReset.textContent = '0%'; mainPctReset.style.color = '#9098a3'; }
+  const warningReset = document.getElementById('qualityWarning');
+  if (warningReset) warningReset.style.display = 'none';
 
   calculatePrice();
 }
