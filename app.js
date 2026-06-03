@@ -14,6 +14,7 @@ const state = {
   text: "",
   textColour: "#ff2b2b",
   font: "Arial",
+  textAlign: "center",
   names: [],
   basePrice: 11.99,
   price: 11.99,
@@ -21,6 +22,13 @@ const state = {
   textRotation: 0,
   logoZIndex: 40
 };
+
+// Calibration: print area width = 30cm. Computed dynamically from actual rendered customArea.
+const PRINT_AREA_WIDTH_CM = 30;
+function getPxPerCm() {
+  const w = customArea ? customArea.clientWidth : 180;
+  return (w > 10 ? w : 180) / PRINT_AREA_WIDTH_CM;
+}
 
 const screens = document.querySelectorAll(".screen");
 const productPreview = document.getElementById("productPreview");
@@ -49,6 +57,30 @@ const deleteTextBtn = document.getElementById("deleteTextBtn");
 const textRotateHandle = document.getElementById("textRotateHandle");
 const textSizeLabel = document.getElementById("textSizeLabel");
 
+function enforceDeleteButtonStyle() {
+  [deleteLogoBtn, deleteTextBtn].forEach(btn => {
+    if (!btn) return;
+    btn.textContent = "×";
+    btn.style.setProperty("background", "transparent", "important");
+    btn.style.setProperty("color", "#dc2626", "important");
+    btn.style.setProperty("border", "1.5px dashed #dc2626", "important");
+    btn.style.setProperty("box-shadow", "none", "important");
+    btn.style.setProperty("border-radius", "50%", "important");
+    btn.style.setProperty("width", "16px", "important");
+    btn.style.setProperty("height", "16px", "important");
+    btn.style.setProperty("right", "-14px", "important");
+    btn.style.setProperty("top", "-14px", "important");
+    btn.style.setProperty("align-items", "center", "important");
+    btn.style.setProperty("justify-content", "center", "important");
+    btn.style.setProperty("font-weight", "700", "important");
+    btn.style.setProperty("font-size", "11px", "important");
+    btn.style.setProperty("line-height", "1", "important");
+    btn.style.setProperty("z-index", "220", "important");
+  });
+}
+
+enforceDeleteButtonStyle();
+
 const removeBackgroundCheck = document.getElementById("removeBackgroundCheck");
 const resizeProportionallyCheck = document.getElementById("resizeProportionallyCheck");
 const applyImagePropertiesBtn = document.getElementById("applyImagePropertiesBtn");
@@ -76,9 +108,141 @@ const colours = [
   ["Cream", "#efd8a9"]
 ];
 
+const BASE_FONT_OPTIONS = [
+  { name: "Arial", cssFamily: "Arial, Helvetica, sans-serif" },
+  { name: "Impact", cssFamily: "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif" },
+  { name: "Georgia", cssFamily: "Georgia, 'Times New Roman', Times, serif" },
+  { name: "Verdana", cssFamily: "Verdana, Geneva, Tahoma, sans-serif" },
+  { name: "Times New Roman", cssFamily: "'Times New Roman', Times, serif" },
+  { name: "Courier New", cssFamily: "'Courier New', Courier, monospace" },
+  { name: "Trebuchet MS", cssFamily: "'Trebuchet MS', Tahoma, sans-serif" },
+  { name: "Arial Black", cssFamily: "'Arial Black', Arial, sans-serif" }
+];
+
+const CUSTOM_FONT_FILES = [
+  { name: "Bebas Neue", file: "BebasNeue-Regular.ttf", format: "truetype" },
+  { name: "Montserrat", file: "Montserrat-Regular.ttf", format: "truetype" },
+  { name: "Montserrat Black", file: "Montserrat-Black.ttf", format: "truetype" },
+  { name: "Roboto", file: "Roboto-Regular.ttf", format: "truetype" },
+  { name: "Rubik", file: "Rubik.ttf", format: "truetype" },
+  { name: "Yellowtail", file: "Yellowtail-Regular.ttf", format: "truetype" },
+  { name: "Bank Gothic Bold", file: "BankGothic Bold.ttf", format: "truetype" },
+  { name: "Bank Gothic Light", file: "Bank Gothic Light Regular.otf", format: "opentype" },
+  { name: "Gotham Bold", file: "Gotham Bold.otf", format: "opentype" },
+  { name: "Futura Extra Bold", file: "Futura Extra Bold.otf", format: "opentype" },
+  { name: "Sports World", file: "Sports World-Regular.ttf", format: "truetype" },
+  { name: "AniMe Matrix", file: "AniMeMatrix-MB_EN.ttf", format: "truetype" }
+  // Add more copied files here:
+  // { name: "My Brand Font", file: "MyBrandFont-Regular.ttf", format: "truetype" }
+];
+
+let FONT_OPTIONS = [...BASE_FONT_OPTIONS];
+
+async function loadCustomFontsFromFolder() {
+  if (!("FontFace" in window)) return;
+
+  const loadedFonts = await Promise.all(CUSTOM_FONT_FILES.map(async ({ name, file, format }) => {
+    try {
+      const fileUrl = `assets/fonts/${encodeURIComponent(file)}`;
+      const fontFace = new FontFace(name, `url("${fileUrl}") format("${format}")`);
+      await fontFace.load();
+      document.fonts.add(fontFace);
+      return { name, cssFamily: `'${name}', Arial, sans-serif` };
+    } catch (error) {
+      return null;
+    }
+  }));
+
+  const customFontOptions = loadedFonts.filter(Boolean);
+  FONT_OPTIONS = [...BASE_FONT_OPTIONS, ...customFontOptions];
+}
+
+function getFontByName(name) {
+  return FONT_OPTIONS.find(font => font.name === name) || FONT_OPTIONS[0];
+}
+
+function renderFontOptions() {
+  const nativeSelect = document.getElementById("fontSelect");
+  const dropdown = document.getElementById("teFontDropdown");
+  const fontPageList = document.getElementById("fontPageList");
+  const selected = document.getElementById("teFontSelected");
+  const fontSelectorBtn = document.getElementById("fontSelectorBtn");
+
+  if (!nativeSelect || !dropdown || !fontPageList) return;
+
+  nativeSelect.innerHTML = "";
+  dropdown.innerHTML = "";
+  fontPageList.innerHTML = "";
+
+  FONT_OPTIONS.forEach(({ name, cssFamily }) => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    nativeSelect.appendChild(option);
+
+    const pickerOption = document.createElement("div");
+    pickerOption.className = "te-font-option";
+    pickerOption.dataset.font = name;
+    pickerOption.style.fontFamily = cssFamily;
+    pickerOption.textContent = `${name} - The quick brown fox`;
+    dropdown.appendChild(pickerOption);
+
+    const pageButton = document.createElement("button");
+    pageButton.dataset.font = name;
+    pageButton.style.fontFamily = cssFamily;
+    pageButton.textContent = name;
+    fontPageList.appendChild(pageButton);
+  });
+
+  const activeFont = getFontByName(state.font);
+  nativeSelect.value = activeFont.name;
+
+  if (selected) {
+    selected.textContent = activeFont.name;
+    selected.style.fontFamily = activeFont.cssFamily;
+  }
+
+  if (fontSelectorBtn) {
+    fontSelectorBtn.textContent = activeFont.name;
+  }
+}
+
+function setSelectedFont(fontName) {
+  const font = getFontByName(fontName);
+  const nativeSelect = document.getElementById("fontSelect");
+  const selected = document.getElementById("teFontSelected");
+  const textarea = document.getElementById("customTextInput");
+  const fontSelectorBtn = document.getElementById("fontSelectorBtn");
+  const dropdown = document.getElementById("teFontDropdown");
+
+  state.font = font.name;
+
+  if (nativeSelect) nativeSelect.value = font.name;
+  if (selected) {
+    selected.textContent = font.name;
+    selected.style.fontFamily = font.cssFamily;
+  }
+  if (textarea) textarea.style.fontFamily = font.cssFamily;
+  if (fontSelectorBtn) fontSelectorBtn.textContent = font.name;
+
+  if (dropdown) {
+    dropdown.querySelectorAll(".te-font-option").forEach(opt => {
+      opt.classList.toggle("active-font", opt.dataset.font === font.name);
+    });
+  }
+}
+
+loadCustomFontsFromFolder().finally(() => {
+  renderFontOptions();
+  setSelectedFont(state.font);
+});
+
 function openScreen(screenId) {
   screens.forEach(screen => screen.classList.remove("active-screen"));
   document.getElementById(screenId).classList.add("active-screen");
+  if (screenId === "textEditorPage") {
+    syncTextEditorFieldsFromState();
+  }
   window.scrollTo(0, 0);
 }
 
@@ -89,6 +253,8 @@ document.querySelectorAll("[data-open]").forEach(button => {
 function updateVisibilityByPrintArea(layer) {
   const layerRect = layer.getBoundingClientRect();
   const areaRect = customArea.getBoundingClientRect();
+  const contentEl = layer === textLayer ? textContent : uploadedLogo;
+  const contentRect = contentEl ? contentEl.getBoundingClientRect() : layerRect;
 
   const isFullyInside =
     layerRect.left >= areaRect.left &&
@@ -101,6 +267,31 @@ function updateVisibilityByPrintArea(layer) {
     layerRect.left > areaRect.right ||
     layerRect.bottom < areaRect.top ||
     layerRect.top > areaRect.bottom;
+
+  if (contentEl) {
+    if (contentRect.width <= 0 || contentRect.height <= 0) {
+      contentEl.style.clipPath = "none";
+      contentEl.style.webkitClipPath = "none";
+    } else if (isCompletelyOutside) {
+      const hiddenClip = "inset(100% 100% 100% 100%)";
+      contentEl.style.clipPath = hiddenClip;
+      contentEl.style.webkitClipPath = hiddenClip;
+    } else {
+      const clipTop = Math.max(0, areaRect.top - contentRect.top);
+      const clipRight = Math.max(0, contentRect.right - areaRect.right);
+      const clipBottom = Math.max(0, contentRect.bottom - areaRect.bottom);
+      const clipLeft = Math.max(0, areaRect.left - contentRect.left);
+
+      const clippedTop = Math.min(contentRect.height, clipTop);
+      const clippedRight = Math.min(contentRect.width, clipRight);
+      const clippedBottom = Math.min(contentRect.height, clipBottom);
+      const clippedLeft = Math.min(contentRect.width, clipLeft);
+
+      const clipRule = `inset(${clippedTop}px ${clippedRight}px ${clippedBottom}px ${clippedLeft}px)`;
+      contentEl.style.clipPath = clipRule;
+      contentEl.style.webkitClipPath = clipRule;
+    }
+  }
 
   layer.classList.remove("inside-print-area", "outside-print-area", "fully-outside-print-area");
 
@@ -244,6 +435,7 @@ mainQtyInput.addEventListener("input", () => {
 document.querySelectorAll("[data-text-type]").forEach(card => {
   card.addEventListener("click", () => {
     state.textType = card.dataset.textType;
+    syncTextEditorFieldsFromState();
     openScreen("textEditorPage");
   });
 });
@@ -274,13 +466,26 @@ if (customTextInput && teCharCount) {
   });
 }
 
+const teLineBreakBtn = document.getElementById("teLineBreakBtn");
+if (teLineBreakBtn && customTextInput) {
+  teLineBreakBtn.addEventListener("click", () => {
+    const start = customTextInput.selectionStart || 0;
+    const end = customTextInput.selectionEnd || 0;
+    const value = customTextInput.value;
+    const next = `${value.slice(0, start)}\n${value.slice(end)}`;
+
+    customTextInput.value = next;
+    customTextInput.selectionStart = customTextInput.selectionEnd = start + 1;
+    teCharCount.textContent = next.length;
+    customTextInput.dispatchEvent(new Event("input", { bubbles: true }));
+    customTextInput.focus();
+  });
+}
+
 // Custom font picker
 (function () {
   const trigger  = document.getElementById("teFontTrigger");
   const dropdown = document.getElementById("teFontDropdown");
-  const selected = document.getElementById("teFontSelected");
-  const nativeSelect = document.getElementById("fontSelect");
-  const textarea = document.getElementById("customTextInput");
   if (!trigger || !dropdown) return;
 
   trigger.addEventListener("click", (e) => {
@@ -288,21 +493,12 @@ if (customTextInput && teCharCount) {
     dropdown.classList.toggle("open");
   });
 
-  dropdown.querySelectorAll(".te-font-option").forEach(opt => {
-    opt.addEventListener("click", () => {
-      const font = opt.dataset.font;
-      // update shown label
-      selected.textContent = font;
-      selected.style.fontFamily = font;
-      // update native select (for applyTextBtn)
-      nativeSelect.value = font;
-      // preview on textarea
-      if (textarea) textarea.style.fontFamily = font;
-      // mark active
-      dropdown.querySelectorAll(".te-font-option").forEach(o => o.classList.remove("active-font"));
-      opt.classList.add("active-font");
-      dropdown.classList.remove("open");
-    });
+  dropdown.addEventListener("click", (event) => {
+    const option = event.target.closest(".te-font-option");
+    if (!option) return;
+
+    setSelectedFont(option.dataset.font);
+    dropdown.classList.remove("open");
   });
 
   // close when clicking outside
@@ -312,39 +508,156 @@ if (customTextInput && teCharCount) {
     }
   });
 
-  // mark Arial as default active
-  const defaultOpt = dropdown.querySelector('[data-font="Arial"]');
-  if (defaultOpt) defaultOpt.classList.add("active-font");
+  setSelectedFont(state.font);
 })();
 
 document.getElementById("applyTextBtn").addEventListener("click", () => {
   state.text = document.getElementById("customTextInput").value.trim() || "TEXT";
   state.textColour = document.getElementById("textColourInput").value;
   state.font = document.getElementById("fontSelect").value;
+  openScreen("mainEditor");
 
   showTextOnCanvas(state.text);
-
   calculatePrice();
-  openScreen("mainEditor");
 });
 
 function showTextOnCanvas(value) {
   textContent.textContent = value;
   textContent.style.color = state.textColour;
-  textContent.style.fontFamily = state.font;
+  textContent.style.fontFamily = getFontByName(state.font).cssFamily;
+  textContent.style.textAlign = state.textAlign || "center";
 
   textLayer.style.display = "flex";
-  textLayer.style.width = "190px";
-  textLayer.style.height = "60px";
   textLayer.style.rotate = "0deg";
   textLayer.style.transform = "none";
 
   state.textRotation = 0;
 
-  centerText();
-  activateText();
-  updateTextSizeLabels();
-  updateVisibilityByPrintArea(textLayer);
+  const placeText = () => {
+    // Wait until main editor/custom area is visible to get real dimensions.
+    if (customArea.clientWidth < 20 || customArea.clientHeight < 20) {
+      requestAnimationFrame(placeText);
+      return;
+    }
+
+    fitTextLayerToContent();
+    centerText();
+    textLayer.classList.remove("active-text");
+    designLayer.classList.remove("active-logo");
+    updateTextSizeLabels();
+    updateVisibilityByPrintArea(textLayer);
+  };
+
+  placeText();
+}
+
+function fitTextLayerToContent() {
+  const content = textContent.textContent || "TEXT";
+  const style = window.getComputedStyle(textContent);
+  const measurer = document.createElement("span");
+  const maxWidth = Math.max(24, customArea.clientWidth - 1);
+  const maxHeight = Math.max(24, customArea.clientHeight * 0.96);
+  const initialFontSize = parseFloat(style.fontSize) || 48;
+  const computedLineHeight = parseFloat(style.lineHeight);
+  const lineHeightRatio = Number.isFinite(computedLineHeight) && initialFontSize > 0
+    ? computedLineHeight / initialFontSize
+    : 1.1;
+
+  measurer.textContent = content;
+  measurer.style.position = "absolute";
+  measurer.style.visibility = "hidden";
+  measurer.style.pointerEvents = "none";
+  measurer.style.whiteSpace = "pre-line";
+  measurer.style.fontFamily = style.fontFamily;
+  measurer.style.fontSize = style.fontSize;
+  measurer.style.fontWeight = style.fontWeight;
+  measurer.style.fontStyle = style.fontStyle;
+  measurer.style.letterSpacing = style.letterSpacing;
+  measurer.style.lineHeight = `${lineHeightRatio}`;
+  measurer.style.webkitTextStroke = style.webkitTextStroke;
+
+  document.body.appendChild(measurer);
+  let fontSize = initialFontSize;
+  let bounds = measurer.getBoundingClientRect();
+
+  // Shrink until text fits inside the printable box width/height.
+  while ((bounds.width > maxWidth || bounds.height > maxHeight) && fontSize > 12) {
+    fontSize -= 1;
+    measurer.style.fontSize = `${fontSize}px`;
+    bounds = measurer.getBoundingClientRect();
+  }
+
+  // Keep the current font size unless it overflows the printable area.
+
+  document.body.removeChild(measurer);
+
+  const strokeSize = parseFloat(style.webkitTextStrokeWidth || "0") || 0;
+  const contentWidth = Math.min(maxWidth, Math.max(20, Math.ceil(bounds.width + strokeSize * 2 + 2)));
+  const contentHeight = Math.min(maxHeight, Math.max(20, Math.ceil(bounds.height + strokeSize * 2 + 2)));
+
+  textContent.style.fontSize = `${fontSize}px`;
+  textLayer.style.width = `${contentWidth}px`;
+  textLayer.style.height = `${contentHeight}px`;
+}
+
+function fitTextFontToLayerBounds() {
+  const content = textContent.textContent || "TEXT";
+  const style = window.getComputedStyle(textContent);
+  const measurer = document.createElement("span");
+  const maxWidth = Math.max(10, textLayer.clientWidth - 2);
+  const initialFontSize = parseFloat(style.fontSize) || 24;
+  const computedLineHeight = parseFloat(style.lineHeight);
+  const lineHeightRatio = Number.isFinite(computedLineHeight) && initialFontSize > 0
+    ? computedLineHeight / initialFontSize
+    : 1.1;
+
+  measurer.textContent = content;
+  measurer.style.position = "absolute";
+  measurer.style.visibility = "hidden";
+  measurer.style.pointerEvents = "none";
+  measurer.style.whiteSpace = "pre-line";
+  measurer.style.fontFamily = style.fontFamily;
+  measurer.style.fontWeight = style.fontWeight;
+  measurer.style.fontStyle = style.fontStyle;
+  measurer.style.letterSpacing = style.letterSpacing;
+  measurer.style.lineHeight = `${lineHeightRatio}`;
+  measurer.style.webkitTextStroke = style.webkitTextStroke;
+
+  let fontSize = initialFontSize;
+  measurer.style.fontSize = `${fontSize}px`;
+  document.body.appendChild(measurer);
+
+  let bounds = measurer.getBoundingClientRect();
+  while (bounds.width > maxWidth && fontSize > 4) {
+    fontSize -= 1;
+    measurer.style.fontSize = `${fontSize}px`;
+    bounds = measurer.getBoundingClientRect();
+  }
+
+  // If there is extra gap, grow text until it nearly reaches the layer bounds.
+  while (bounds.width < maxWidth * 0.985 && fontSize < 420) {
+    fontSize += 1;
+    measurer.style.fontSize = `${fontSize}px`;
+    const nextBounds = measurer.getBoundingClientRect();
+
+    if (nextBounds.width > maxWidth) {
+      fontSize -= 1;
+      measurer.style.fontSize = `${fontSize}px`;
+      bounds = measurer.getBoundingClientRect();
+      break;
+    }
+
+    bounds = nextBounds;
+  }
+
+  document.body.removeChild(measurer);
+  textContent.style.fontSize = `${fontSize}px`;
+
+  const strokeSize = parseFloat(style.webkitTextStrokeWidth || "0") || 0;
+  const fittedWidth = Math.max(20, Math.ceil(bounds.width + strokeSize * 2 + 2));
+  const fittedHeight = Math.max(20, Math.ceil(bounds.height + strokeSize * 2 + 2));
+  textLayer.style.width = `${fittedWidth}px`;
+  textLayer.style.height = `${fittedHeight}px`;
 }
 
 function centerText() {
@@ -360,25 +673,123 @@ function activateText() {
   updateTextSizeLabels();
 }
 
+function setTextAlignment(align) {
+  const allowedAlignments = ["left", "center", "right"];
+  const normalized = allowedAlignments.includes(align) ? align : "center";
+
+  state.textAlign = normalized;
+  textContent.style.textAlign = normalized;
+  if (customTextInput) customTextInput.style.textAlign = normalized;
+
+  const inlineTextInput = document.getElementById("teInlineTextInput");
+  if (inlineTextInput) inlineTextInput.style.textAlign = normalized;
+
+  document.querySelectorAll(".text-align-btn").forEach(button => {
+    button.classList.toggle("active", button.dataset.align === normalized);
+  });
+
+  document.querySelectorAll(".te-inline-align-btn").forEach(button => {
+    button.classList.toggle("active", button.dataset.inlineAlign === normalized);
+  });
+}
+
 function updateTextSizeLabels() {
-  const widthCm = (textLayer.offsetWidth / 3.4).toFixed(2);
-  const heightCm = (textLayer.offsetHeight / 3.4).toFixed(2);
+  const textRect = textContent.getBoundingClientRect();
+  const widthPx = Math.max(1, Math.ceil(textRect.width));
+  const heightPx = Math.max(1, Math.ceil(textRect.height));
+  const pxPerCm = getPxPerCm();
+  const widthCm = (widthPx / pxPerCm).toFixed(2);
+  const heightCm = (heightPx / pxPerCm).toFixed(2);
   const label = `${widthCm}cm x ${heightCm}cm`;
 
   textSizeLabel.textContent = label;
   textPropertySizeLabel.textContent = label;
+
+  const inlineSizeLabel = document.getElementById("teInlineSizeLabel");
+  if (inlineSizeLabel) inlineSizeLabel.textContent = label;
 }
 
 textSettingsBtn.addEventListener("click", e => {
   e.stopPropagation();
+  syncTextEditorFieldsFromState();
+  openScreen("textEditorPage");
+  setTeAccordionOpen("tePositionItem", false);
+  setTeAccordionOpen("teTextPropertiesItem", false);
+});
 
+function openTextPropertiesPage(section = "formatting") {
   textPropertyInput.value = state.text || textContent.textContent;
   textPropertyColour.value = state.textColour;
   textRotateInput.value = Math.round(state.textRotation || 0);
-
+  setTextAlignment(state.textAlign || "center");
   updateTextSizeLabels();
+
+  const panel = document.getElementById("textPositionSizePanel");
+  if (panel) {
+    panel.classList.toggle("open", section === "position");
+  }
+
   openScreen("textPropertiesPage");
-});
+}
+
+const openTePositionSizeBtn = document.getElementById("openTePositionSize");
+const openTeTextPropertiesBtn = document.getElementById("openTeTextProperties");
+
+function setTeAccordionOpen(itemId, forceState = null) {
+  const item = document.getElementById(itemId);
+  const panel = item ? item.querySelector(".te-dropdown-panel") : null;
+  if (!item || !panel) return;
+
+  const openState = forceState === null ? !item.classList.contains("open") : !!forceState;
+  item.classList.toggle("open", openState);
+
+  const trigger = item.querySelector(".te-property-link");
+  if (trigger) {
+    trigger.setAttribute("aria-expanded", openState ? "true" : "false");
+  }
+}
+
+function syncTextEditorFieldsFromState() {
+  const activeAlign = state.textAlign || "center";
+
+  if (customTextInput) {
+    customTextInput.value = state.text || textContent.textContent || "";
+    customTextInput.style.textAlign = activeAlign;
+    if (teCharCount) teCharCount.textContent = customTextInput.value.length;
+  }
+
+  if (textColourInput) textColourInput.value = state.textColour || "#ff2b2b";
+
+  const inlineTextInput = document.getElementById("teInlineTextInput");
+  if (inlineTextInput) {
+    inlineTextInput.value = state.text || textContent.textContent || "";
+    inlineTextInput.style.textAlign = activeAlign;
+  }
+
+  const inlineColourInput = document.getElementById("teInlineColourInput");
+  if (inlineColourInput) inlineColourInput.value = state.textColour || "#ff2b2b";
+
+  const inlineRotateInput = document.getElementById("teInlineRotateInput");
+  if (inlineRotateInput) inlineRotateInput.value = Math.round(state.textRotation || 0);
+
+  const inlineSizeLabel = document.getElementById("teInlineSizeLabel");
+  if (inlineSizeLabel) inlineSizeLabel.textContent = textSizeLabel.textContent;
+
+  const inlineResizeCheck = document.getElementById("teInlineResizeProportionallyCheck");
+  if (inlineResizeCheck) inlineResizeCheck.checked = textResizeProportionallyCheck.checked;
+
+  document.querySelectorAll(".te-inline-align-btn").forEach(button => {
+    button.classList.toggle("active", button.dataset.inlineAlign === (state.textAlign || "center"));
+  });
+}
+
+if (openTePositionSizeBtn) {
+  openTePositionSizeBtn.addEventListener("click", () => setTeAccordionOpen("tePositionItem"));
+}
+
+if (openTeTextPropertiesBtn) {
+  openTeTextPropertiesBtn.addEventListener("click", () => setTeAccordionOpen("teTextPropertiesItem"));
+}
 
 deleteTextBtn.addEventListener("click", e => {
   e.stopPropagation();
@@ -422,6 +833,18 @@ document.getElementById("continueLogoBtn").addEventListener("click", () => {
   openScreen("copyrightPage");
 });
 
+const copyrightCheckbox = document.getElementById("copyrightCheckbox");
+const copyrightCheckCard = document.querySelector(".copyright-check");
+
+if (copyrightCheckbox && copyrightCheckCard) {
+  const syncCopyrightCheckState = () => {
+    copyrightCheckCard.classList.toggle("is-checked", copyrightCheckbox.checked);
+  };
+
+  copyrightCheckbox.addEventListener("change", syncCopyrightCheckState);
+  syncCopyrightCheckState();
+}
+
 document.getElementById("copyrightOkBtn").addEventListener("click", () => {
   const checkbox = document.getElementById("copyrightCheckbox");
 
@@ -431,10 +854,9 @@ document.getElementById("copyrightOkBtn").addEventListener("click", () => {
   }
 
   state.copyrightConfirmed = true;
-
+  openScreen("mainEditor");
   showLogoOnCanvas(state.uploadedLogo);
   calculatePrice();
-  openScreen("mainEditor");
 });
 
 function showLogoOnCanvas(imageSrc) {
@@ -444,17 +866,83 @@ function showLogoOnCanvas(imageSrc) {
   uploadedLogo.style.display = "block";
 
   designLayer.style.display = "flex";
-  designLayer.style.width = "130px";
-  designLayer.style.height = "130px";
   designLayer.style.rotate = "0deg";
   designLayer.style.transform = "none";
 
   state.logoRotation = 0;
 
-  centerLogo();
-  activateLogo();
-  updateLogoSizeLabels();
-  updateVisibilityByPrintArea(designLayer);
+  const placeLogo = () => {
+    // When main editor is hidden, customArea measures as 0x0; wait until visible.
+    if (customArea.clientWidth < 20 || customArea.clientHeight < 20) {
+      requestAnimationFrame(placeLogo);
+      return;
+    }
+
+    fitLogoToPrintArea();
+    centerLogo();
+    activateLogo();
+    updateLogoSizeLabels();
+    updateVisibilityByPrintArea(designLayer);
+  };
+
+  if (uploadedLogo.complete && uploadedLogo.naturalWidth > 0 && uploadedLogo.naturalHeight > 0) {
+    placeLogo();
+    return;
+  }
+
+  uploadedLogo.onload = () => {
+    placeLogo();
+    uploadedLogo.onload = null;
+  };
+}
+
+function fitLogoToPrintArea() {
+  const imageRatio = getLogoAspectRatio();
+
+  // Fill almost all printable area while preserving aspect ratio.
+  const maxWidth = Math.max(30, customArea.clientWidth * 0.96);
+  const maxHeight = Math.max(30, customArea.clientHeight * 0.96);
+
+  let width = maxWidth;
+  let height = width / imageRatio;
+
+  if (height > maxHeight) {
+    height = maxHeight;
+    width = height * imageRatio;
+  }
+
+  designLayer.style.width = `${Math.round(width)}px`;
+  designLayer.style.height = `${Math.round(height)}px`;
+}
+
+function getLogoAspectRatio() {
+  const naturalWidth = uploadedLogo.naturalWidth || 0;
+  const naturalHeight = uploadedLogo.naturalHeight || 0;
+
+  if (naturalWidth > 0 && naturalHeight > 0) {
+    return naturalWidth / naturalHeight;
+  }
+
+  const fallbackHeight = Math.max(1, designLayer.offsetHeight || 1);
+  const fallbackWidth = Math.max(1, designLayer.offsetWidth || 1);
+  return fallbackWidth / fallbackHeight;
+}
+
+function getRenderedLogoSizePx() {
+  const containerWidth = Math.max(1, designLayer.offsetWidth);
+  const containerHeight = Math.max(1, designLayer.offsetHeight);
+  const logoRatio = getLogoAspectRatio();
+  const containerRatio = containerWidth / containerHeight;
+
+  if (containerRatio > logoRatio) {
+    const height = containerHeight;
+    const width = height * logoRatio;
+    return { width, height };
+  }
+
+  const width = containerWidth;
+  const height = width / logoRatio;
+  return { width, height };
 }
 
 function centerLogo() {
@@ -471,12 +959,46 @@ function activateLogo() {
 }
 
 function updateLogoSizeLabels() {
-  const widthCm = (designLayer.offsetWidth / 3.4).toFixed(2);
-  const heightCm = (designLayer.offsetHeight / 3.4).toFixed(2);
+  const renderedSize = getRenderedLogoSizePx();
+  const pxPerCm = getPxPerCm();
+  const widthCm = (renderedSize.width / pxPerCm).toFixed(2);
+  const heightCm = (renderedSize.height / pxPerCm).toFixed(2);
   const label = `${widthCm}cm x ${heightCm}cm`;
 
   logoSizeLabel.textContent = label;
   propertySizeLabel.textContent = label;
+  updateQualityBar(parseFloat(widthCm));
+}
+
+function updateQualityBar(widthCm) {
+  const mask = document.getElementById('qualityMask');
+  const pctEl = document.getElementById('qualityPct');
+  const mainBar = document.getElementById('mainQualityBar');
+  const mainMask = document.getElementById('mainQualityMask');
+  const mainPct = document.getElementById('mainQualityPct');
+
+  // quality: 20% at full print area (30cm), 100% at 12cm or smaller
+  const maxCm = PRINT_AREA_WIDTH_CM;
+  const minCm = 12;
+  const quality = Math.max(20, Math.min(100, Math.round(20 + (maxCm - widthCm) / (maxCm - minCm) * 80)));
+  const maskWidth = 100 - quality;
+
+  function applyToBar(maskEl, pctElLocal) {
+    if (!maskEl || !pctElLocal) return;
+    maskEl.style.width = maskWidth + '%';
+    if (maskWidth === 0) maskEl.style.borderRadius = '0';
+    else maskEl.style.borderRadius = '0 8px 8px 0';
+    pctElLocal.textContent = quality + '%';
+    if (quality < 40) pctElLocal.style.color = '#e53e3e';
+    else if (quality < 60) pctElLocal.style.color = '#ed8936';
+    else if (quality < 75) pctElLocal.style.color = '#ecc94b';
+    else pctElLocal.style.color = '#48bb78';
+  }
+
+  applyToBar(mask, pctEl);
+  applyToBar(mainMask, mainPct);
+
+
 }
 
 logoSettingsBtn.addEventListener("click", e => {
@@ -503,6 +1025,13 @@ function clearLogo() {
   state.originalUploadedLogo = null;
   state.copyrightConfirmed = false;
   state.logoRotation = 0;
+
+  // Reset quality bar to 0%
+  const mainBarReset = document.getElementById('mainQualityBar');
+  const mainMaskReset = document.getElementById('mainQualityMask');
+  const mainPctReset = document.getElementById('mainQualityPct');
+  if (mainMaskReset) { mainMaskReset.style.width = '100%'; mainMaskReset.style.borderRadius = '0 6px 6px 0'; }
+  if (mainPctReset) { mainPctReset.textContent = '0%'; mainPctReset.style.color = '#9098a3'; }
 
   calculatePrice();
 }
@@ -725,7 +1254,7 @@ function handleObjectTransform(e, type) {
   const startWidth = isLogo ? logoStartWidth : textStartWidth;
   const startHeight = isLogo ? logoStartHeight : textStartHeight;
   const proportional = isLogo ? true : textResizeProportionallyCheck.checked;
-  const aspectRatio = startHeight / startWidth;
+  const aspectRatio = isLogo ? (1 / getLogoAspectRatio()) : (startHeight / startWidth);
 
   const dx = e.clientX - startX;
   const dy = e.clientY - startY;
@@ -764,6 +1293,30 @@ function handleObjectTransform(e, type) {
   if (newWidth > 500) newWidth = 500;
   if (newHeight > 500) newHeight = 500;
 
+  // Keep text box ratio stable while proportional resize is enabled,
+  // even after min/max constraints kick in.
+  if (!isLogo && proportional) {
+    newHeight = newWidth * aspectRatio;
+
+    if (newHeight < 20) {
+      newHeight = 20;
+    }
+
+    if (newHeight > 500) {
+      newHeight = 500;
+    }
+
+    if (newWidth < 25) {
+      newWidth = 25;
+      newHeight = newWidth * aspectRatio;
+    }
+
+    if (newWidth > 500) {
+      newWidth = 500;
+      newHeight = newWidth * aspectRatio;
+    }
+  }
+
   layer.style.left = `${newLeft}px`;
   layer.style.top = `${newTop}px`;
   layer.style.width = `${newWidth}px`;
@@ -771,7 +1324,7 @@ function handleObjectTransform(e, type) {
   layer.style.transform = "none";
 
   if (!isLogo) {
-    textContent.style.fontSize = `${Math.max(12, newHeight * 0.78)}px`;
+    fitTextFontToLayerBounds();
   }
 
   isLogo ? updateLogoSizeLabels() : updateTextSizeLabels();
@@ -796,11 +1349,15 @@ document.addEventListener("click", e => {
 });
 
 function resizeLogoBy(amount) {
+  const aspectRatio = 1 / getLogoAspectRatio();
   let newWidth = designLayer.offsetWidth + amount;
-  let newHeight = resizeProportionallyCheck.checked ? newWidth : designLayer.offsetHeight + amount;
+  let newHeight = newWidth * aspectRatio;
 
   if (newWidth < 25) newWidth = 25;
-  if (newHeight < 25) newHeight = 25;
+  if (newHeight < 25) {
+    newHeight = 25;
+    newWidth = newHeight / aspectRatio;
+  }
 
   designLayer.style.width = `${newWidth}px`;
   designLayer.style.height = `${newHeight}px`;
@@ -811,15 +1368,22 @@ function resizeLogoBy(amount) {
 }
 
 function resizeTextBy(amount) {
+  const aspectRatio = Math.max(0.05, textLayer.offsetHeight / Math.max(1, textLayer.offsetWidth));
   let newWidth = textLayer.offsetWidth + amount;
-  let newHeight = textLayer.offsetHeight + amount * 0.35;
+  let newHeight = newWidth * aspectRatio;
 
-  if (newWidth < 40) newWidth = 40;
-  if (newHeight < 24) newHeight = 24;
+  if (newWidth < 40) {
+    newWidth = 40;
+    newHeight = newWidth * aspectRatio;
+  }
+
+  if (newHeight < 24) {
+    newHeight = 24;
+  }
 
   textLayer.style.width = `${newWidth}px`;
   textLayer.style.height = `${newHeight}px`;
-  textContent.style.fontSize = `${Math.max(12, newHeight * 0.78)}px`;
+  fitTextFontToLayerBounds();
 
   activateText();
   updateTextSizeLabels();
@@ -871,10 +1435,11 @@ applyImagePropertiesBtn.addEventListener("click", async () => {
     designLayer.style.transform = "none";
   }
 
-  updateLogoSizeLabels();
-  activateLogo();
-  updateVisibilityByPrintArea(designLayer);
   openScreen("mainEditor");
+  requestAnimationFrame(() => {
+    activateLogo();
+    updateVisibilityByPrintArea(designLayer);
+  });
 });
 
 async function removeImageBackground(imageSrc, tolerance = 45) {
@@ -987,6 +1552,7 @@ document.getElementById("applyTextPropertiesBtn").addEventListener("click", () =
   state.textRotation = parseFloat(textRotateInput.value) || 0;
   textLayer.style.rotate = `${state.textRotation}deg`;
 
+  fitTextLayerToContent();
   activateText();
   updateTextSizeLabels();
   updateVisibilityByPrintArea(textLayer);
@@ -996,6 +1562,9 @@ document.getElementById("applyTextPropertiesBtn").addEventListener("click", () =
 textPropertyInput.addEventListener("input", () => {
   state.text = textPropertyInput.value;
   textContent.textContent = state.text;
+  fitTextLayerToContent();
+  updateTextSizeLabels();
+  updateVisibilityByPrintArea(textLayer);
 });
 
 textPropertyColour.addEventListener("input", () => {
@@ -1017,17 +1586,26 @@ document.getElementById("italicTextBtn").addEventListener("click", () => {
   textContent.style.fontStyle = textContent.style.fontStyle === "italic" ? "normal" : "italic";
 });
 
-document.getElementById("alignLeftBtn").addEventListener("click", () => {
-  textContent.style.textAlign = "left";
-});
+const alignLeftBtn = document.getElementById("alignLeftBtn");
+if (alignLeftBtn) {
+  alignLeftBtn.addEventListener("click", () => {
+    setTextAlignment("left");
+  });
+}
 
-document.getElementById("alignCenterBtn").addEventListener("click", () => {
-  textContent.style.textAlign = "center";
-});
+const alignCenterBtn = document.getElementById("alignCenterBtn");
+if (alignCenterBtn) {
+  alignCenterBtn.addEventListener("click", () => {
+    setTextAlignment("center");
+  });
+}
 
-document.getElementById("alignRightBtn").addEventListener("click", () => {
-  textContent.style.textAlign = "right";
-});
+const alignRightBtn = document.getElementById("alignRightBtn");
+if (alignRightBtn) {
+  alignRightBtn.addEventListener("click", () => {
+    setTextAlignment("right");
+  });
+}
 
 document.getElementById("outlineRange").addEventListener("input", function () {
   const size = parseInt(this.value) || 0;
@@ -1048,16 +1626,15 @@ document.getElementById("fontSelectorBtn").addEventListener("click", () => {
   openScreen("fontPage");
 });
 
-document.querySelectorAll("[data-font]").forEach(button => {
-  button.addEventListener("click", () => {
-    const font = button.dataset.font;
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("#fontPage [data-font]");
+  if (!button) return;
 
-    state.font = font;
-    textContent.style.fontFamily = font;
-    document.getElementById("fontSelectorBtn").textContent = font;
+  const font = getFontByName(button.dataset.font);
+  setSelectedFont(font.name);
+  textContent.style.fontFamily = font.cssFamily;
 
-    openScreen("textPropertiesPage");
-  });
+  openScreen("textEditorPage");
 });
 
 document.querySelectorAll("[data-text-move]").forEach(button => {
@@ -1090,6 +1667,120 @@ document.querySelectorAll("[data-text-move]").forEach(button => {
 
 document.getElementById("textSizeUpBtn").addEventListener("click", () => resizeTextBy(10));
 document.getElementById("textSizeDownBtn").addEventListener("click", () => resizeTextBy(-10));
+
+const teInlineTextInput = document.getElementById("teInlineTextInput");
+if (teInlineTextInput) {
+  teInlineTextInput.addEventListener("input", () => {
+    const value = teInlineTextInput.value;
+    state.text = value;
+    if (customTextInput) {
+      customTextInput.value = value;
+      if (teCharCount) teCharCount.textContent = value.length;
+    }
+
+    if (textLayer.style.display !== "none" && value.trim()) {
+      textContent.textContent = value;
+      fitTextLayerToContent();
+      updateTextSizeLabels();
+      updateVisibilityByPrintArea(textLayer);
+    }
+  });
+}
+
+const teInlineColourInput = document.getElementById("teInlineColourInput");
+if (teInlineColourInput) {
+  teInlineColourInput.addEventListener("input", () => {
+    state.textColour = teInlineColourInput.value;
+    if (textColourInput) textColourInput.value = state.textColour;
+    textContent.style.color = state.textColour;
+  });
+}
+
+const teInlineResizeProportionallyCheck = document.getElementById("teInlineResizeProportionallyCheck");
+if (teInlineResizeProportionallyCheck) {
+  teInlineResizeProportionallyCheck.addEventListener("change", () => {
+    textResizeProportionallyCheck.checked = teInlineResizeProportionallyCheck.checked;
+  });
+}
+
+const teInlineRotateInput = document.getElementById("teInlineRotateInput");
+if (teInlineRotateInput) {
+  teInlineRotateInput.addEventListener("input", () => {
+    state.textRotation = parseFloat(teInlineRotateInput.value) || 0;
+    textLayer.style.rotate = `${state.textRotation}deg`;
+    if (textRotateInput) textRotateInput.value = Math.round(state.textRotation || 0);
+    updateVisibilityByPrintArea(textLayer);
+  });
+}
+
+document.querySelectorAll("[data-inline-text-move]").forEach(button => {
+  button.addEventListener("click", () => {
+    const move = button.dataset.inlineTextMove;
+    const step = 10;
+
+    let left = textLayer.offsetLeft;
+    let top = textLayer.offsetTop;
+
+    if (move.includes("left")) left -= step;
+    if (move.includes("right")) left += step;
+    if (move.includes("up")) top -= step;
+    if (move.includes("down")) top += step;
+
+    if (move === "center") {
+      left = customArea.offsetWidth / 2 - textLayer.offsetWidth / 2;
+      top = customArea.offsetHeight / 2 - textLayer.offsetHeight / 2;
+    }
+
+    textLayer.style.left = `${left}px`;
+    textLayer.style.top = `${top}px`;
+    textLayer.style.transform = "none";
+    updateVisibilityByPrintArea(textLayer);
+  });
+});
+
+const teInlineSizeUpBtn = document.getElementById("teInlineSizeUpBtn");
+if (teInlineSizeUpBtn) teInlineSizeUpBtn.addEventListener("click", () => resizeTextBy(10));
+
+const teInlineSizeDownBtn = document.getElementById("teInlineSizeDownBtn");
+if (teInlineSizeDownBtn) teInlineSizeDownBtn.addEventListener("click", () => resizeTextBy(-10));
+
+const teInlineBoldBtn = document.getElementById("teInlineBoldBtn");
+if (teInlineBoldBtn) {
+  teInlineBoldBtn.addEventListener("click", () => {
+    textContent.style.fontWeight = textContent.style.fontWeight === "800" ? "400" : "800";
+  });
+}
+
+const teInlineItalicBtn = document.getElementById("teInlineItalicBtn");
+if (teInlineItalicBtn) {
+  teInlineItalicBtn.addEventListener("click", () => {
+    textContent.style.fontStyle = textContent.style.fontStyle === "italic" ? "normal" : "italic";
+  });
+}
+
+document.querySelectorAll(".te-inline-align-btn").forEach(button => {
+  button.addEventListener("click", () => {
+    const align = button.dataset.inlineAlign || "center";
+    setTextAlignment(align);
+    document.querySelectorAll(".te-inline-align-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.inlineAlign === align);
+    });
+  });
+});
+
+const teInlineOutlineRange = document.getElementById("teInlineOutlineRange");
+const teInlineOutlineColour = document.getElementById("teInlineOutlineColour");
+
+if (teInlineOutlineRange && teInlineOutlineColour) {
+  const applyInlineStroke = () => {
+    const size = parseInt(teInlineOutlineRange.value, 10) || 0;
+    const colour = teInlineOutlineColour.value || "#000000";
+    textContent.style.webkitTextStroke = `${size}px ${colour}`;
+  };
+
+  teInlineOutlineRange.addEventListener("input", applyInlineStroke);
+  teInlineOutlineColour.addEventListener("input", applyInlineStroke);
+}
 
 document.getElementById("addNameBtn").addEventListener("click", () => {
   const size = document.getElementById("namesSizeSelect").value;
@@ -1430,5 +2121,55 @@ document.getElementById("zoomOutBtn").addEventListener("click", () => {
 document.getElementById("resetViewBtn").addEventListener("click", () => {
   currentZoom = 1;
   applyZoom();
+});
+
+function resetLayerRotationToStraight(layerType) {
+  if (layerType === "logo") {
+    state.logoRotation = 0;
+    designLayer.style.rotate = "0deg";
+    if (rotateInput) rotateInput.value = 0;
+    updateVisibilityByPrintArea(designLayer);
+    return true;
+  }
+
+  if (layerType === "text") {
+    state.textRotation = 0;
+    textLayer.style.rotate = "0deg";
+    if (textRotateInput) textRotateInput.value = 0;
+    const teInlineRotateInput = document.getElementById("teInlineRotateInput");
+    if (teInlineRotateInput) teInlineRotateInput.value = 0;
+    updateVisibilityByPrintArea(textLayer);
+    return true;
+  }
+
+  return false;
+}
+
+document.getElementById("straightenBtn").addEventListener("click", () => {
+  const textIsActive = textLayer.classList.contains("active-text");
+  const logoIsActive = designLayer.classList.contains("active-logo");
+
+  if (textIsActive) {
+    resetLayerRotationToStraight("text");
+    return;
+  }
+
+  if (logoIsActive) {
+    resetLayerRotationToStraight("logo");
+    return;
+  }
+
+  // Fallback: if nothing is selected, straighten any visible rotated layer.
+  let changed = false;
+  if (Math.abs(state.textRotation || 0) > 0.01 && textLayer.style.display !== "none") {
+    changed = resetLayerRotationToStraight("text") || changed;
+  }
+  if (Math.abs(state.logoRotation || 0) > 0.01 && designLayer.style.display !== "none") {
+    changed = resetLayerRotationToStraight("logo") || changed;
+  }
+
+  if (!changed) {
+    resetLayerRotationToStraight("text");
+  }
 });
 
