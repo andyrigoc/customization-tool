@@ -2846,6 +2846,11 @@ textarea {
    ================================================================ */
 @media (min-width: 800px) {
 
+  /* Ensure non-active screens are hidden (ID selector overrides class selector) */
+  .screen:not(.active-screen) {
+    display: none;
+  }
+
   /* ── App shell ── */
   .customiser-app {
     height: 100vh;
@@ -2854,7 +2859,7 @@ textarea {
     overflow: hidden;
   }
 
-  #mainEditor {
+  #mainEditor.active-screen {
     flex: 1;
     display: grid;
     grid-template-columns: 268px 1fr;
@@ -2971,6 +2976,7 @@ textarea {
     border-right: 1px solid #e8e8e8;
     border-radius: 0;
     padding: 0;
+    padding-bottom: 80px;
     overflow-y: auto;
     box-shadow: none;
     background: #fff;
@@ -3044,14 +3050,42 @@ textarea {
   }
 
   .product-preview {
-    height: 100%;
-    max-height: none;
+    height: auto;
     max-width: 560px;
     width: 100%;
   }
 
   .polo-colour-wrap {
     width: min(440px, 90%);
+    margin: 0 auto;
+  }
+
+  /* ── Orphaned items: product-header / quality bar / warning ── */
+  .product-header {
+    display: none;
+  }
+
+  .main-quality-bar {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: end;
+    z-index: 10;
+    background: #fff;
+    border-top: 1px solid #f0f0f0;
+    padding: 8px 12px 6px;
+  }
+
+  .quality-warning {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: end;
+    z-index: 9;
+    margin-bottom: 62px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-left: 12px;
+    margin-right: 12px;
+    font-size: 10px;
   }
 
   .right-panel {
